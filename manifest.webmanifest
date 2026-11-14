@@ -1,0 +1,15 @@
+{
+  "name": "LUMEN — The Living Eye",
+  "short_name": "LUMEN",
+  "description": "A cybernetic code eye that blinks with you.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050713",
+  "theme_color": "#050713",
+  "icons": [
+    { "src": "./icons/lumen-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./icons/lumen-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

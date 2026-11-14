@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#050713" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="A living cybernetic eye that blinks when you blink." />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/lumen-192.png" type="image/png" />
+  <title>LUMEN // The Living Eye</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050713;
+      --panel: rgba(9, 15, 31, .72);
+      --line: rgba(89, 205, 255, .18);
+      --cyan: #53e7ff;
+      --blue: #2397ff;
+      --muted: #7893a9;
+      --white: #e7f7ff;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--white); font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; }
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+      background:
+        radial-gradient(ellipse at 50% 46%, rgba(12, 49, 94, .28), transparent 46%),
+        radial-gradient(ellipse at 50% 0%, rgba(40, 15, 100, .22), transparent 43%),
+        #050713;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .18;
+      background-image: linear-gradient(rgba(91, 190, 255, .08) 1px, transparent 1px), linear-gradient(90deg, rgba(91, 190, 255, .06) 1px, transparent 1px);
+      background-size: 54px 54px;
+      mask-image: radial-gradient(ellipse at center, black, transparent 78%);
+    }
+    .shell { width: min(1180px, calc(100% - 44px)); margin: 0 auto; padding: 26px 0 22px; position: relative; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 5px 2px 24px; }
+    .brand { display: flex; align-items: center; gap: 12px; font: 700 12px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .22em; color: #d5f6ff; }
+    .brand-mark { width: 31px; height: 31px; display: grid; place-items: center; border: 1px solid rgba(83,231,255,.55); border-radius: 50%; color: var(--cyan); box-shadow: 0 0 22px rgba(35,151,255,.23), inset 0 0 15px rgba(35,151,255,.12); font-size: 15px; }
+    .version { color: #5c7790; font: 10px ui-monospace, monospace; letter-spacing: .16em; }
+    .intro { text-align: center; margin: 12px auto 9px; }
+    .eyebrow { color: var(--cyan); font: 10px ui-monospace, monospace; letter-spacing: .34em; text-transform: uppercase; margin-bottom: 12px; }
+    h1 { margin: 0; font-size: clamp(27px, 4.6vw, 48px); line-height: 1.04; letter-spacing: .095em; font-weight: 650; text-shadow: 0 0 30px rgba(57,181,255,.24); }
+    .sub { color: #91aabd; font-size: 13px; letter-spacing: .035em; margin: 12px auto 0; max-width: 590px; line-height: 1.6; }
+    .visual-wrap { position: relative; margin: 20px auto 16px; width: 100%; border: 1px solid rgba(69, 168, 221, .2); border-radius: 18px; overflow: hidden; background: linear-gradient(180deg, rgba(4,10,24,.6), rgba(2,5,14,.92)); box-shadow: 0 25px 90px rgba(0,0,0,.45), 0 0 45px rgba(14,133,220,.09), inset 0 0 40px rgba(26,128,211,.06); }
+    .visual-wrap::before, .visual-wrap::after { content: ""; position: absolute; z-index: 2; width: 46px; height: 46px; pointer-events: none; border-color: rgba(83,231,255,.6); }
+    .visual-wrap::before { left: 12px; top: 12px; border-left: 1px solid; border-top: 1px solid; }
+    .visual-wrap::after { right: 12px; bottom: 12px; border-right: 1px solid; border-bottom: 1px solid; }
+    canvas { display: block; width: 100%; height: auto; min-height: 225px; }
+    .visual-label { position: absolute; z-index: 3; left: 21px; top: 18px; color: rgba(137,206,231,.7); font: 9px ui-monospace, monospace; letter-spacing: .18em; }
+    .visual-code { position: absolute; z-index: 3; right: 21px; top: 18px; color: rgba(137,206,231,.55); text-align: right; font: 9px/1.6 ui-monospace, monospace; letter-spacing: .08em; }
+    .hud { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 0 auto 16px; }
+    .metric { min-width: 0; padding: 15px 17px; border: 1px solid var(--line); border-radius: 12px; background: linear-gradient(135deg, rgba(10,22,42,.8), rgba(5,10,23,.78)); box-shadow: inset 0 1px rgba(255,255,255,.025); }
+    .metric-label { color: #66859d; font: 9px ui-monospace, monospace; letter-spacing: .2em; text-transform: uppercase; }
+    .metric-value { margin-top: 8px; font: 600 19px ui-monospace, monospace; color: #e5faff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .metric-value.cyan { color: var(--cyan); text-shadow: 0 0 15px rgba(83,231,255,.32); }
+    .controls { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 18px 0 14px; }
+    button { appearance: none; border: 1px solid rgba(83,231,255,.42); color: #ddfaff; background: linear-gradient(135deg, rgba(17,93,135,.55), rgba(22,32,75,.82)); border-radius: 8px; padding: 12px 19px; min-width: 148px; cursor: pointer; font: 700 10px ui-monospace, monospace; letter-spacing: .15em; text-transform: uppercase; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+    button:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--cyan); box-shadow: 0 0 24px rgba(35,151,255,.2); }
+    button:disabled { cursor: not-allowed; opacity: .4; }
+    button.secondary { background: rgba(6,12,27,.7); border-color: rgba(128,159,185,.25); color: #9bb4c7; }
+    .privacy { text-align: center; color: #60788d; font-size: 10px; line-height: 1.6; margin: 10px auto 0; max-width: 650px; }
+    .privacy strong { color: #8fb5c8; font-weight: 600; }
+    .camera-card { position: absolute; z-index: 5; top: 18px; right: 18px; width: 150px; border: 1px solid rgba(83,231,255,.25); background: rgba(4,9,21,.8); border-radius: 9px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,.28); }
+    .camera-card video { width: 100%; display: block; aspect-ratio: 4/3; object-fit: cover; transform: scaleX(-1); background: #030712; opacity: .83; }
+    .camera-caption { padding: 6px 8px; color: #6f9cb1; font: 8px ui-monospace, monospace; letter-spacing: .12em; }
+    .live-dot { display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: #516273; vertical-align: 1px; }
+    .live-dot.on { background: #43f0bd; box-shadow: 0 0 9px #43f0bd; }
+    .foot { display: flex; justify-content: space-between; gap: 12px; color: #455d72; font: 9px ui-monospace, monospace; letter-spacing: .12em; margin-top: 24px; padding: 13px 2px 0; border-top: 1px solid rgba(104,160,196,.12); }
+    .toast { min-height: 17px; text-align: center; color: #77dff2; font: 10px ui-monospace, monospace; letter-spacing: .1em; }
+    @media (max-width: 680px) {
+      .shell { width: min(100% - 24px, 600px); padding-top: 16px; }
+      header { padding-bottom: 17px; }
+      .version { display: none; }
+      .sub { font-size: 11px; padding: 0 12px; }
+      .visual-wrap { margin-top: 17px; border-radius: 12px; }
+      canvas { min-height: 170px; }
+      .camera-card { width: 92px; top: 11px; right: 11px; }
+      .camera-caption { font-size: 7px; padding: 5px 6px; }
+      .visual-label, .visual-code { font-size: 7px; top: 10px; }
+      .visual-label { left: 12px; }
+      .visual-code { right: 12px; }
+      .hud { gap: 7px; }
+      .metric { padding: 11px 9px; }
+      .metric-label { font-size: 7px; letter-spacing: .13em; }
+      .metric-value { font-size: 15px; }
+      button { min-width: 132px; padding: 11px 13px; }
+      .foot { font-size: 7px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand"><span class="brand-mark">◉</span><span>LUMEN SYSTEMS</span></div>
+      <div class="version">EXPERIMENT 001&nbsp; // &nbsp;REALTIME BIOMETRIC VISUAL</div>
+    </header>
+
+    <section class="intro">
+      <div class="eyebrow">A DIGITAL REFLECTION</div>
+      <h1>THE LIVING EYE</h1>
+      <p class="sub">A synthetic eye that follows your rhythm. Blink in the real world — watch the code blink with you.</p>
+    </section>
+
+    <section class="visual-wrap" aria-label="Animated digital eye">
+      <div class="visual-label">OPTIC ENGINE / 01</div>
+      <div class="visual-code">VISUAL_SYNC: <span id="syncText">STANDBY</span><br>RENDER: TEXT + LIGHT</div>
+      <canvas id="eyeCanvas" width="1400" height="560"></canvas>
+      <div class="camera-card">
+        <video id="webcam" autoplay muted playsinline></video>
+        <div class="camera-caption"><span class="live-dot" id="liveDot"></span><span id="cameraCaption">CAMERA OFFLINE</span></div>
+      </div>
+    </section>
+
+    <section class="hud" aria-label="Live status">
+      <div class="metric"><div class="metric-label">Connection</div><div class="metric-value" id="connectionValue">STANDBY</div></div>
+      <div class="metric"><div class="metric-label">Eye state</div><div class="metric-value cyan" id="eyeStateValue">AWAKE</div></div>
+      <div class="metric"><div class="metric-label">Detected blinks</div><div class="metric-value" id="blinkCount">000</div></div>
+    </section>
+
+    <div class="toast" id="toast" role="status">SYSTEM READY — CAMERA PERMISSION REQUIRED</div>
+    <div class="controls">
+      <button id="startButton">INITIALIZE CAMERA</button>
+      <button id="stopButton" class="secondary" disabled>DISCONNECT</button>
+      <button id="testButton" class="secondary">TEST BLINK</button>
+    </div>
+    <p class="privacy"><strong>Privacy:</strong> camera frames are processed in your browser to detect eye movement. This project does not record, save, or upload your video.</p>
+    <footer class="foot"><span>LUMEN // VISUAL INTERFACE</span><span>STAY CURIOUS&nbsp; · &nbsp;STAY HUMAN</span></footer>
+  </main>
+
+  <script type="module">
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.warn));
+    }
+
+    const canvas = document.getElementById('eyeCanvas');
+    const ctx = canvas.getContext('2d');
+    const video = document.getElementById('webcam');
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const testButton = document.getElementById('testButton');
+    const connectionValue = document.getElementById('connectionValue');
+    const eyeStateValue = document.getElementById('eyeStateValue');
+    const blinkCountEl = document.getElementById('blinkCount');
+    const toast = document.getElementById('toast');
+    const syncText = document.getElementById('syncText');
+    const liveDot = document.getElementById('liveDot');
+    const cameraCaption = document.getElementById('cameraCaption');
+
+    let landmarker = null;
+    let cameraStream = null;
+    let tracking = false;
+    let lastVideoTime = -1;
+    let blinkCount = 0;
+    let smoothedBlink = 0;
+    let isBlinking = false;
+    let lastBlinkAt = 0;
+    let openness = 1;
+    let targetOpenness = 1;
+    let animationFrame = 0;
+    let demoTimer = 0;
+
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const smoothstep = (a, b, x) => {
+      const t = clamp((x - a) / (b - a), 0, 1);
+      return t * t * (3 - 2 * t);
+    };
+
+    function setStatus(connection, eyeState, message, online = false) {
+      connectionValue.textContent = connection;
+      eyeStateValue.textContent = eyeState;
+      toast.textContent = message;
+      syncText.textContent = online ? 'SYNCHRONIZED' : 'STANDBY';
+      liveDot.classList.toggle('on', online);
+      cameraCaption.textContent = online ? 'LIVE / LOCAL' : 'CAMERA OFFLINE';
+    }
+
+    function registerBlink() {
+      const now = performance.now();
+      if (now - lastBlinkAt < 220) return;
+      lastBlinkAt = now;
+      blinkCount += 1;
+      blinkCountEl.textContent = String(blinkCount).padStart(3, '0');
+      toast.textContent = 'BLINK SIGNAL RECEIVED // VISUAL RESPONSE';
+      eyeStateValue.textContent = 'BLINK';
+    }
+
+    function findScore(categories, name) {
+      const item = categories.find((category) => category.categoryName === name);
+      return item ? item.score : 0;
+    }
+
+    function processBlendshapes(result) {
+      if (!result.faceBlendshapes || !result.faceBlendshapes.length) {
+        targetOpenness = 1;
+        smoothedBlink *= 0.82;
+        eyeStateValue.textContent = 'NO FACE';
+        toast.textContent = 'MOVE INTO THE CAMERA FRAME';
+        return;
+      }
+      const categories = result.faceBlendshapes[0].categories;
+      const left = findScore(categories, 'eyeBlinkLeft');
+      const right = findScore(categories, 'eyeBlinkRight');
+      const raw = (left + right) / 2;
+      smoothedBlink = smoothedBlink * 0.48 + raw * 0.52;
+      targetOpenness = 1 - smoothstep(0.22, 0.78, smoothedBlink);
+      if (!isBlinking && smoothedBlink > 0.48) {
+        isBlinking = true;
+        registerBlink();
+      } else if (isBlinking && smoothedBlink < 0.25) {
+        isBlinking = false;
+        eyeStateValue.textContent = 'AWAKE';
+        toast.textContent = 'TRACKING ACTIVE // BLINK NATURALLY';
+      }
+    }
+
+    function detectionLoop() {
+      if (!tracking || !landmarker) return;
+      if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+        lastVideoTime = video.currentTime;
+        try {
+          const result = landmarker.detectForVideo(video, performance.now());
+          processBlendshapes(result);
+        } catch (error) {
+          console.error('Frame detection error:', error);
+          toast.textContent = 'FRAME DETECTION INTERRUPTED';
+        }
+      }
+      animationFrame = requestAnimationFrame(detectionLoop);
+    }
+
+    async function createLandmarker() {
+      const { FilesetResolver, FaceLandmarker } = await import(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs'
+      );
+      const vision = await FilesetResolver.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm'
+      );
+      const modelAssetPath = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+      const options = {
+        baseOptions: { modelAssetPath, delegate: 'GPU' },
+        runningMode: 'VIDEO',
+        numFaces: 1,
+        outputFaceBlendshapes: true,
+        minFaceDetectionConfidence: 0.55,
+        minFacePresenceConfidence: 0.55,
+        minTrackingConfidence: 0.55
+      };
+      try {
+        return await FaceLandmarker.createFromOptions(vision, options);
+      } catch (gpuError) {
+        console.warn('GPU delegate unavailable; retrying with CPU.', gpuError);
+        options.baseOptions = { modelAssetPath, delegate: 'CPU' };
+        return await FaceLandmarker.createFromOptions(vision, options);
+      }
+    }
+
+    async function startCamera() {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setStatus('UNAVAILABLE', 'AWAKE', 'USE A MODERN BROWSER ON LOCALHOST OR HTTPS');
+        return;
+      }
+      startButton.disabled = true;
+      setStatus('STARTING', 'AWAKE', 'REQUESTING CAMERA ACCESS…');
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+        });
+        video.srcObject = cameraStream;
+        await video.play();
+        toast.textContent = 'LOADING EYE-TRACKING MODEL…';
+        landmarker = await createLandmarker();
+        tracking = true;
+        lastVideoTime = -1;
+        startButton.disabled = true;
+        stopButton.disabled = false;
+        setStatus('CONNECTED', 'AWAKE', 'TRACKING ACTIVE // BLINK NATURALLY', true);
+        detectionLoop();
+      } catch (error) {
+        console.error(error);
+        stopTracksOnly();
+        startButton.disabled = false;
+        stopButton.disabled = true;
+        const message = error?.name === 'NotAllowedError'
+          ? 'CAMERA PERMISSION BLOCKED — ALLOW CAMERA ACCESS IN YOUR BROWSER'
+          : error?.name === 'NotFoundError'
+            ? 'NO CAMERA FOUND — CONNECT OR ENABLE A CAMERA'
+            : 'COULD NOT START — CHECK CAMERA PERMISSION AND INTERNET';
+        setStatus('OFFLINE', 'AWAKE', message);
+      }
+    }
+
+    function stopTracksOnly() {
+      if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop());
+      cameraStream = null;
+      video.srcObject = null;
+    }
+
+    function stopCamera() {
+      tracking = false;
+      cancelAnimationFrame(animationFrame);
+      if (landmarker) {
+        try { landmarker.close(); } catch (_) {}
+        landmarker = null;
+      }
+      stopTracksOnly();
+      targetOpenness = 1;
+      isBlinking = false;
+      smoothedBlink = 0;
+      startButton.disabled = false;
+      stopButton.disabled = true;
+      setStatus('STANDBY', 'AWAKE', 'CAMERA DISCONNECTED');
+    }
+
+    startButton.addEventListener('click', startCamera);
+    stopButton.addEventListener('click', stopCamera);
+    testButton.addEventListener('click', () => {
+      clearTimeout(demoTimer);
+      targetOpenness = 0.02;
+      registerBlink();
+      eyeStateValue.textContent = 'BLINK';
+      demoTimer = setTimeout(() => {
+        targetOpenness = 1;
+        if (!tracking) eyeStateValue.textContent = 'AWAKE';
+      }, 180);
+    });
+
+    // The eye is drawn as a clipped field of tiny code fragments and concentric data rings.
+    function drawEye(time) {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      const bg = ctx.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0, '#050b1a');
+      bg.addColorStop(.5, '#030816');
+      bg.addColorStop(1, '#02050e');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      // Very subtle moving scan lines.
+      ctx.save();
+      ctx.globalAlpha = .12;
+      ctx.strokeStyle = '#2a9bc4';
+      ctx.lineWidth = 1;
+      for (let y = 8; y < h; y += 13) {
+        const shift = Math.sin(time * .00035 + y * .02) * 4;
+        ctx.beginPath(); ctx.moveTo(0, y + shift); ctx.lineTo(w, y + shift); ctx.stroke();
+      }
+      ctx.restore();
+
+      const cx = 700, cy = 282;
+      const open = clamp(openness, .025, 1);
+      const topY = cy - 238 * open;
+      const bottomY = cy + 205 * open;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(150, cy);
+      ctx.bezierCurveTo(400, topY, 990, topY, 1250, cy);
+      ctx.bezierCurveTo(990, bottomY, 400, bottomY, 150, cy);
+      ctx.closePath();
+      ctx.clip();
+
+      const inside = ctx.createRadialGradient(cx, cy, 20, cx, cy, 600);
+      inside.addColorStop(0, '#0a2035');
+      inside.addColorStop(.55, '#06101f');
+      inside.addColorStop(1, '#02050d');
+      ctx.fillStyle = inside;
+      ctx.fillRect(100, 20, 1200, 520);
+
+      // Streams of code create the texture of the eyelid and sclera.
+      const snippets = [
+        'const signal = observe(blink);', 'if (iris.active) render();', '01010110 01100101 01100011',
+        'while (light) { breathe(); }', 'await optic.sync(frame);', 'memory.read("human");',
+        'function perceive(input) {', 'return vision.transform(data);', '0xA7 0x3F 0x91 0xCE',
+        'const pulse = spectral.shift;', 'renderEye(deltaTime);', 'neural.link.established();'
+      ];
+      ctx.textBaseline = 'middle';
+      for (let row = -13; row <= 13; row++) {
+        const y = cy + row * 17;
+        const rowWave = Math.sin(row * .62) * 22;
+        let x = 170 + (row % 2) * 15;
+        let index = Math.abs(row * 7) % snippets.length;
+        while (x < 1250) {
+          const seed = Math.abs(Math.sin(x * .017 + row * 12.3));
+          const text = snippets[(index + Math.floor(seed * snippets.length)) % snippets.length];
+          ctx.font = `${8 + seed * 2}px monospace`;
+          ctx.fillStyle = seed > .76 ? `rgba(84,224,255,${.25 + seed * .35})` : `rgba(184,220,239,${.11 + seed * .22})`;
+          ctx.shadowColor = seed > .76 ? '#159dd4' : 'transparent';
+          ctx.shadowBlur = seed > .76 ? 7 : 0;
+          ctx.fillText(text, x, y + rowWave * .12);
+          x += 145 + seed * 35;
+          index += 1;
+        }
+      }
+      ctx.shadowBlur = 0;
+
+      // Iris: rings, radial ticks, and code around a dark pupil.
+      const pulse = 1 + Math.sin(time * .0014) * .012;
+      const irisR = 168 * pulse;
+      const irisGrad = ctx.createRadialGradient(cx, cy, 8, cx, cy, irisR);
+      irisGrad.addColorStop(0, '#02050b');
+      irisGrad.addColorStop(.28, '#071e31');
+      irisGrad.addColorStop(.58, '#0c4562');
+      irisGrad.addColorStop(.78, '#09243d');
+      irisGrad.addColorStop(1, 'rgba(4,12,25,.3)');
+      ctx.beginPath(); ctx.arc(cx, cy, irisR, 0, Math.PI * 2); ctx.fillStyle = irisGrad; ctx.fill();
+
+      for (let ring = 0; ring < 5; ring++) {
+        const r = 58 + ring * 25;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = ring % 2 ? 'rgba(62,213,255,.45)' : 'rgba(33,139,211,.62)';
+        ctx.lineWidth = ring === 2 ? 2 : 1;
+        ctx.shadowColor = '#1bbce9'; ctx.shadowBlur = ring === 2 ? 13 : 5; ctx.stroke();
+      }
+      ctx.shadowBlur = 0;
+
+      for (let i = 0; i < 150; i++) {
+        const angle = (i / 150) * Math.PI * 2 + time * .000035;
+        const r1 = 78 + (i % 5) * 4;
+        const r2 = 108 + (i % 7) * 7;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(angle) * r1, cy + Math.sin(angle) * r1);
+        ctx.lineTo(cx + Math.cos(angle) * r2, cy + Math.sin(angle) * r2);
+        ctx.strokeStyle = i % 4 === 0 ? 'rgba(102,239,255,.8)' : 'rgba(44,163,224,.42)';
+        ctx.lineWidth = i % 9 === 0 ? 2 : 1;
+        ctx.stroke();
+      }
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      for (let i = 0; i < 84; i++) {
+        const a = (i / 84) * Math.PI * 2;
+        const r = 137;
+        ctx.save();
+        ctx.rotate(a);
+        ctx.fillStyle = i % 3 === 0 ? 'rgba(115,238,255,.92)' : 'rgba(90,187,230,.54)';
+        ctx.font = '8px monospace';
+        ctx.fillText(i % 2 ? '1' : '0', r, 3);
+        ctx.restore();
+      }
+      ctx.restore();
+
+      // Pupil and a small specular reflection.
+      ctx.beginPath(); ctx.arc(cx, cy, 53, 0, Math.PI * 2);
+      ctx.fillStyle = '#010309'; ctx.fill();
+      ctx.beginPath(); ctx.arc(cx - 17, cy - 19, 9, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(174,247,255,.8)'; ctx.shadowColor = '#50e4ff'; ctx.shadowBlur = 17; ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Floating glyphs around the iris.
+      ctx.font = '11px monospace';
+      for (let i = 0; i < 48; i++) {
+        const a = i * Math.PI * 2 / 48 - time * .000055;
+        const r = 190 + Math.sin(i * 2.1) * 8;
+        ctx.fillStyle = i % 4 === 0 ? 'rgba(96,224,255,.75)' : 'rgba(121,166,195,.37)';
+        ctx.fillText(i % 3 === 0 ? '01' : i % 3 === 1 ? '><' : '::', cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+      }
+      ctx.restore(); // eye clipping
+
+      // Eyelid contours remain visible as the eye closes.
+      ctx.save();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(160,235,255,.83)';
+      ctx.shadowColor = '#159bd4'; ctx.shadowBlur = 17;
+      ctx.beginPath(); ctx.moveTo(150, cy); ctx.bezierCurveTo(400, topY, 990, topY, 1250, cy); ctx.stroke();
+      ctx.strokeStyle = 'rgba(62,169,218,.72)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(150, cy); ctx.bezierCurveTo(400, bottomY, 990, bottomY, 1250, cy); ctx.stroke();
+      ctx.restore();
+
+      // Center-line reticle and quiet corner markers.
+      ctx.save();
+      ctx.strokeStyle = 'rgba(61,182,225,.25)'; ctx.lineWidth = 1;
+      ctx.setLineDash([5, 9]);
+      ctx.beginPath(); ctx.moveTo(cx, 42); ctx.lineTo(cx, 520); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(106,204,237,.52)'; ctx.font = '10px monospace';
+      ctx.fillText('X: 0700', 44, 510); ctx.fillText('Y: 0282', 44, 526);
+      ctx.fillText(`APERTURE: ${(open * 100).toFixed(0)}%`, 1195, 510);
+      ctx.restore();
+    }
+
+    function animate(time) {
+      openness += (targetOpenness - openness) * (targetOpenness < openness ? .34 : .19);
+      if (Math.abs(targetOpenness - openness) < .002) openness = targetOpenness;
+      drawEye(time);
+      requestAnimationFrame(animate);
+    }
+
+    setStatus('STANDBY', 'AWAKE', 'SYSTEM READY — CAMERA PERMISSION REQUIRED');
+    requestAnimationFrame(animate);
+    window.addEventListener('beforeunload', () => {
+      tracking = false;
+      stopTracksOnly();
+      if (landmarker) landmarker.close();
+    });
+  </script>
+</body>
+</html>
